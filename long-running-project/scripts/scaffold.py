@@ -122,8 +122,21 @@ def merge_agents_section(
         return True
 
     existing = read_text(agents_path)
+    has_start = AGENTS_START in existing
+    has_end = AGENTS_END in existing
 
-    if AGENTS_START in existing and AGENTS_END in existing:
+    # Broken / partial markers — do not append a second block
+    if has_start != has_end:
+        print(
+            f"ERROR: {agents_path} has a broken LONG-RUNNING-PROJECT marker pair "
+            f"(START={'yes' if has_start else 'no'}, END={'yes' if has_end else 'no'}).\n"
+            "  Fix or remove the partial markers, then re-run.\n"
+            "  Tip: delete the incomplete block, or restore AGENTS.md from git.",
+            file=sys.stderr,
+        )
+        raise SystemExit(3)
+
+    if has_start and has_end:
         if not refresh:
             skipped.append(
                 str(agents_path)
@@ -187,7 +200,12 @@ def fill_verify_placeholders(agents_path: Path, guesses: dict[str, str]) -> None
         return
     text = read_text(agents_path)
     # Only replace HTML placeholders still present (never clobber user-edited commands)
-    if "<!-- VERIFY_BUILD -->" not in text and "<!-- VERIFY_TEST -->" not in text:
+    placeholders = (
+        "<!-- VERIFY_BUILD -->",
+        "<!-- VERIFY_TEST -->",
+        "<!-- VERIFY_LINT -->",
+    )
+    if not any(p in text for p in placeholders):
         return
     text = text.replace("<!-- VERIFY_BUILD -->", guesses["build"])
     text = text.replace("<!-- VERIFY_TEST -->", guesses["test"])
@@ -228,6 +246,11 @@ def main() -> int:
         action="store_true",
         help="Allow scaffolding in $HOME or temp/root (not recommended)",
     )
+    parser.add_argument(
+        "--force-state",
+        action="store_true",
+        help="Reset SESSION-HANDOFF / FEATURE-LIST / progress.txt templates (destructive)",
+    )
     args = parser.parse_args()
 
     if not TEMPLATES.is_dir():
@@ -241,20 +264,29 @@ def main() -> int:
     skipped: list[str] = []
     updated: list[str] = []
 
-    docs = {
+    # Milestone state: never clobber with --force (progress is precious).
+    # Use --force-state to reset deliberately.
+    for rel, src in {
         "docs/SESSION-HANDOFF.md": TEMPLATES / "SESSION-HANDOFF.md",
         "docs/FEATURE-LIST.md": TEMPLATES / "FEATURE-LIST.md",
         "docs/progress.txt": TEMPLATES / "progress.txt",
+    }.items():
+        dest = root / rel
+        if rel == "docs/SESSION-HANDOFF.md":
+            if dest.exists() and not args.force_state:
+                skipped.append(str(dest))
+            else:
+                existed = dest.exists()
+                write_text(dest, stamp_handoff(read_text(src)))
+                created.append(str(dest) + (" (reset)" if existed else ""))
+        else:
+            ensure_file(dest, src, args.force_state, created, skipped)
+
+    for rel, src in {
         "docs/ROADMAP.md": TEMPLATES / "ROADMAP.md",
         "docs/DECISIONS.md": TEMPLATES / "DECISIONS.md",
-    }
-    for rel, src in docs.items():
-        dest = root / rel
-        if rel == "docs/SESSION-HANDOFF.md" and (not dest.exists() or args.force):
-            write_text(dest, stamp_handoff(read_text(src)))
-            created.append(str(dest))
-        else:
-            ensure_file(dest, src, args.force, created, skipped)
+    }.items():
+        ensure_file(root / rel, src, args.force, created, skipped)
 
     ensure_file(
         root / ".grok" / "config.toml",

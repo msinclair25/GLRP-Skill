@@ -4,7 +4,7 @@
 # Works on: macOS, Linux, Windows (Git Bash or WSL). Requires: bash, git (for one-liner), cp/mkdir.
 #
 # One-liner (macOS / Linux / Git Bash / WSL):
-#   git clone --depth 1 https://github.com/msinclair25/GLRP-Skill.git "${TMPDIR:-/tmp}/GLRP-Skill" && bash "${TMPDIR:-/tmp}/GLRP-Skill/install.sh" && rm -rf "${TMPDIR:-/tmp}/GLRP-Skill"
+#   rm -rf "${TMPDIR:-/tmp}/GLRP-Skill" && git clone --depth 1 https://github.com/msinclair25/GLRP-Skill.git "${TMPDIR:-/tmp}/GLRP-Skill" && bash "${TMPDIR:-/tmp}/GLRP-Skill/install.sh" && rm -rf "${TMPDIR:-/tmp}/GLRP-Skill"
 #
 set -euo pipefail
 

@@ -52,7 +52,8 @@ python3 "$HOME/.grok/skills/long-running-project/scripts/scaffold.py" --cwd "$(g
 
 | User said | Pass |
 |-----------|------|
-| `force` / overwrite files | `--force` (also refreshes managed AGENTS section) |
+| `force` / overwrite templates | `--force` (refreshes AGENTS block; does **not** wipe handoff/feature-list) |
+| `force state` / reset handoff | `--force-state` (destructive to SESSION-HANDOFF / FEATURE-LIST / progress) |
 | `refresh agents` / update protocol block | `--refresh-agents-section` |
 | `single agent` / no multi-agent | `--single-agent` |
 | do not touch AGENTS.md | `--no-agents-merge` |

@@ -56,7 +56,7 @@ The full design notes live in [`docs/PLAYBOOK.md`](docs/PLAYBOOK.md).
 **Copy-paste one line** (macOS, Linux, Windows Git Bash / WSL, or Grok Build):
 
 ```bash
-git clone --depth 1 https://github.com/msinclair25/GLRP-Skill.git "${TMPDIR:-/tmp}/GLRP-Skill" && bash "${TMPDIR:-/tmp}/GLRP-Skill/install.sh" && rm -rf "${TMPDIR:-/tmp}/GLRP-Skill"
+rm -rf "${TMPDIR:-/tmp}/GLRP-Skill" && git clone --depth 1 https://github.com/msinclair25/GLRP-Skill.git "${TMPDIR:-/tmp}/GLRP-Skill" && bash "${TMPDIR:-/tmp}/GLRP-Skill/install.sh" && rm -rf "${TMPDIR:-/tmp}/GLRP-Skill"
 ```
 
 That clones the repo, installs into `~/.grok/skills/long-running-project/`, adds a short pointer in `~/.grok/AGENTS.md` if needed, then removes the temp clone.
@@ -95,7 +95,8 @@ activate long running project
 
 | Say / pass | Effect |
 |------------|--------|
-| `force` | Overwrite existing scaffold **files** + refresh managed AGENTS section |
+| `force` | Overwrite scaffold templates (agents, config, roadmap…) + refresh managed AGENTS section — **does not** wipe handoff/feature-list |
+| `force state` / `--force-state` | Reset SESSION-HANDOFF / FEATURE-LIST / progress (destructive) |
 | `refresh agents` / `--refresh-agents-section` | Update **only** the managed AGENTS block (keep rest of file) |
 | `single agent` / `--single-agent` | Skip multi-agent `.grok/agents/*` profiles |
 | `no agents merge` / `--no-agents-merge` | Do not touch `AGENTS.md` |
