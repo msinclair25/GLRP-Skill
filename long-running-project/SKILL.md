@@ -8,131 +8,140 @@ description: >
   Scaffolds AGENTS.md managed section, docs handoff/feature list, .grok agents,
   deny rules, and project-complete skill. Do not use for one-off questions.
 user-invocable: true
-argument-hint: "[--force] [--single-agent] [optional milestone goal]"
+argument-hint: "[--force] [--single-agent] [--refresh-agents-section] [optional milestone goal]"
 metadata:
   short-description: "Scaffold long-running project protocol"
 ---
 
 # Activate long-running project
 
-You are activating the **long-running project protocol** for the **current workspace**
-(the repo / cwd of this Grok session). This is an **execute** skill, not an essay.
+You are activating the **long-running project protocol** for a **project repository**.
+This is an **execute** skill, not an essay.
 
 ## Goal
 
-1. Scaffold durable on-disk structure (idempotent).
-2. Wire shared `AGENTS.md` rules + multi-agent profiles (unless single-agent).
-3. Tell the user exactly how to work from here.
-4. If they gave a milestone goal, seed handoff + feature list and stop ready to work.
+1. Confirm the correct project root (never scaffold `$HOME` or a random folder).
+2. Scaffold durable on-disk structure (idempotent; protect existing `AGENTS.md`).
+3. Tell the user how to work — including that **memory is optional and not auto-enabled**.
+4. If they gave a milestone goal, seed handoff + feature list.
 
 ## Steps (do in order)
 
-### 1. Confirm workspace
+### 1. Confirm workspace (required — do not skip)
 
-- Resolve project root (git root if available, else cwd).
-- Briefly note existing `AGENTS.md`, `docs/`, `.grok/` so the user knows what will change.
+1. Resolve **git toplevel**:
+   ```bash
+   git rev-parse --show-toplevel
+   ```
+2. If that fails, **stop** and ask the user to `cd` into their project repo (or pass a path). Do **not** scaffold `$HOME`, `/`, or a temp directory.
+3. Show the user the resolved root and existing files briefly:
+   - Does `AGENTS.md` already exist?
+   - Does `.grok/` already exist?
+4. If the session cwd is a **subdirectory** of a monorepo, still use the **git root** unless the user explicitly wants a package subfolder **and** that subfolder is itself a separate git repo.
+5. If anything looks wrong (user said project A but cwd is project B), **ask before scaffolding**.
 
 ### 2. Run the scaffold script
 
-Run this from the project root (adjust path only if skill root differs):
+Always pass the **git root** as `--cwd`:
 
 ```bash
-python3 "$HOME/.grok/skills/long-running-project/scripts/scaffold.py" --cwd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+python3 "$HOME/.grok/skills/long-running-project/scripts/scaffold.py" --cwd "$(git rev-parse --show-toplevel)"
 ```
 
 **Flags from user arguments:**
 
 | User said | Pass |
 |-----------|------|
-| `force` / overwrite | `--force` |
+| `force` / overwrite files | `--force` (also refreshes managed AGENTS section) |
+| `refresh agents` / update protocol block | `--refresh-agents-section` |
 | `single agent` / no multi-agent | `--single-agent` |
 | do not touch AGENTS.md | `--no-agents-merge` |
+| not a git repo (rare) | `--allow-non-git` only after user confirms |
 
-If `python3` fails, create the same files using templates under:
+**AGENTS.md protection (built into script):**
+
+- Never rewrites the whole file.
+- If no markers: **appends** the managed block only.
+- If managed block already exists: **leaves it alone** unless `--refresh-agents-section` or `--force`.
+- Content **outside** `<!-- LONG-RUNNING-PROJECT:START -->` … `END` is never modified by refresh.
+
+If `python3` fails, try `python`. Only if both fail, create files from templates under:
 
 `$HOME/.grok/skills/long-running-project/references/templates/`
 
-following the script’s layout (do not invent a different structure).
+following the same safety rules (git root, no clobber of full AGENTS.md).
 
-### 3. Fill verify commands
+### 3. Fill verify commands (only if placeholders remain)
 
-Open `AGENTS.md` managed section. If verify lines still contain `<FILL:…>`:
+Open `AGENTS.md` managed section. If verify lines still contain `<!-- VERIFY_* -->` or `<FILL:…>`:
 
-- Infer from `package.json` / `Cargo.toml` / `pyproject.toml` / `go.mod` / README.
-- Replace placeholders with real commands.
-- If unknown, leave clear `TODO` and ask the user once in the final summary.
+- Infer from package manifests / README.
+- Replace placeholders only — do not rewrite user-edited commands.
+- If unknown, leave TODO and mention once in the summary.
 
 ### 4. Seed milestone (if user provided a goal)
 
-If the user stated what they are building:
+Only edit handoff/feature list if those files are new or still templates — **do not wipe** user-filled SESSION-HANDOFF without asking.
 
-1. Update `docs/SESSION-HANDOFF.md` with STATUS, goal, acceptance stubs, date.
-2. Put 3–10 concrete checkboxes in `docs/FEATURE-LIST.md`.
-3. Append one line to `docs/progress.txt`: activation note.
+### 5. Memory — NOT activated by this skill
 
-If no goal was given, leave templates and list what they should fill.
+**GLRP does not enable experimental memory.** Users must opt in themselves:
 
-### 5. Memory (optional, non-blocking)
+| Method | Command / config |
+|--------|------------------|
+| One session | `grok --experimental-memory` |
+| Env | `export GROK_MEMORY=1` |
+| Persistent | `[memory] enabled = true` in `~/.grok/config.toml` |
+| Mid-session | `/memory on` |
 
-If memory tools are available, offer or run:
+Handoff files work **without** memory. Memory is optional sugar (`/flush`, `/remember`).
 
-- `/memory on` is user-toggled — tell them to enable if off.
-- Suggest `/remember` once: long-running protocol active; handoff at docs/SESSION-HANDOFF.md.
-
-Do not fail the skill if memory is disabled.
+Tell the user this clearly in the activation card.
 
 ### 6. Report activation card
-
-Print a compact Markdown card:
 
 ```markdown
 ## Long-running project: ACTIVE
 
-**Root:** …
+**Root:** … (must be the intended git project)
 **Scaffold:** created / updated / skipped counts
 
+### AGENTS.md
+- Existing body preserved
+- Managed section: created | appended | left as-is | refreshed (only if requested)
+
 ### Files
-- AGENTS.md (managed section)
-- docs/SESSION-HANDOFF.md, FEATURE-LIST.md, progress.txt, ROADMAP.md, DECISIONS.md
-- .grok/config.toml (deny rules)
-- .grok/agents/{conductor,explorer,implementer,reviewer}.md  (unless --single-agent)
-- .grok/skills/project-complete/
+- docs/SESSION-HANDOFF.md, FEATURE-LIST.md, progress.txt, …
+- .grok/config.toml (deny rules) — only if newly created
+- .grok/agents/* (unless --single-agent)
 
-### How to work from now on
-1. Put acceptance in FEATURE-LIST + SESSION-HANDOFF before big work.
-2. Use checklist prompts (“Done means ALL of: …”).
-3. After multi-part or code: `/check-work` then update handoff.
-4. Before /compact or /new: update handoff + `/flush`.
-5. Delegate only independent work; prefer .grok/agents/* profiles.
-6. Deep reference: docs/GROK-LONG-RUNNING-PLAYBOOK.md (if linked) or
-   ~/Documents/CodexSolLunaRoleKit/Grok Build - Long Running Project Playbook.md
+### Memory
+- **Not enabled by GLRP.** Optional: `grok --experimental-memory` or `/memory on`
 
-### Your next command
-@docs/SESSION-HANDOFF.md @docs/FEATURE-LIST.md
-Continue milestone: <goal or "fill FEATURE-LIST first">
+### How to work
+1. Fill FEATURE-LIST + SESSION-HANDOFF
+2. Checklist prompts; `/check-work` after multi-part code
+3. Before /compact or /new: update handoff (+ `/flush` if memory is on)
 ```
 
 ### 7. Completeness for *this* skill
 
-Before ending:
-
-- [ ] Scaffold script ran (or equivalent files written)
-- [ ] AGENTS managed section present (unless --no-agents-merge)
-- [ ] Verify commands best-effort filled
-- [ ] Activation card shown
-- [ ] No unrelated refactors
-
-Do **not** implement product features unless the user also asked for that in the same message.
+- [ ] Git root confirmed with user-visible path
+- [ ] Scaffold ran against that root only
+- [ ] AGENTS.md not wholesale replaced
+- [ ] Memory called out as optional / not auto-on
+- [ ] No unrelated product code changes
 
 ## What this skill does *not* do
 
-- Change global `~/.grok/config.toml` (user must enable memory / effort themselves if desired).
-- Install MCP servers or enable always-approve.
-- Commit to git (offer commit only if user asks).
-- Replace an existing carefully written AGENTS.md body — it only maintains the
-  `<!-- LONG-RUNNING-PROJECT:START -->` … `END` section.
+- Enable `--experimental-memory` or change global Grok config for memory
+- Install MCP, always-approve, or sandbox profiles
+- Commit to git
+- Replace an entire existing `AGENTS.md`
+- Scaffold outside a project without explicit unsafe flags
 
 ## Re-activate / upgrade
 
-Running again refreshes the managed AGENTS section and skips existing files unless `--force`.
-Safe to re-run after skill template updates.
+- Default re-run: **skips** existing files; **keeps** existing managed AGENTS section.
+- To pull new protocol text into the managed block only: `--refresh-agents-section`.
+- To overwrite scaffold templates (docs agents, etc.): `--force` (ask user first on mature repos).

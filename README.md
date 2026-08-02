@@ -95,8 +95,10 @@ activate long running project
 
 | Say / pass | Effect |
 |------------|--------|
-| `force` | Overwrite existing scaffold files |
+| `force` | Overwrite existing scaffold **files** + refresh managed AGENTS section |
+| `refresh agents` / `--refresh-agents-section` | Update **only** the managed AGENTS block (keep rest of file) |
 | `single agent` / `--single-agent` | Skip multi-agent `.grok/agents/*` profiles |
+| `no agents merge` / `--no-agents-merge` | Do not touch `AGENTS.md` |
 | a milestone goal in the same message | Seeds handoff + feature list |
 
 **Without Grok** (script only):
@@ -133,9 +135,9 @@ your-repo/
       project-complete/SKILL.md      # completeness ritual
 ```
 
-### `AGENTS.md` merge behavior
+### `AGENTS.md` merge behavior (safe by default)
 
-GLRP maintains only this marked block:
+GLRP only touches this marked block:
 
 ```html
 <!-- LONG-RUNNING-PROJECT:START -->
@@ -143,13 +145,89 @@ GLRP maintains only this marked block:
 <!-- LONG-RUNNING-PROJECT:END -->
 ```
 
-- Creates `AGENTS.md` if missing  
-- Appends the block if your file has no markers  
-- **Refreshes** the block on re-activate (your content outside the markers is kept)  
+| Situation | Behavior |
+|-----------|----------|
+| No `AGENTS.md` | Creates file + managed block |
+| `AGENTS.md` exists, no markers | **Appends** managed block; your existing text is unchanged |
+| Managed block already present | **Leaves it alone** (your edits kept) |
+| `--refresh-agents-section` or `--force` | Replaces **only** the managed block; everything outside markers is preserved |
+| `--no-agents-merge` | Does not touch `AGENTS.md` at all |
+
+GLRP **never** deletes or rewrites your whole agents file.
+
+### Project root (cwd) safety
+
+Activate / scaffold:
+
+- Resolves the **git repository root** (not a random nested folder).
+- **Refuses** `$HOME`, filesystem root, and temp dirs unless you pass `--allow-unsafe-cwd`.
+- **Refuses** non-git folders unless you pass `--allow-non-git`.
+
+Always run activate from the project you intend (or tell Grok the path).
 
 ### Verify commands
 
-The scaffold best-effort detects `npm` / `cargo` / `pytest` / `go` commands and fills placeholders. Edit remaining `TODO` / `<FILL:…>` lines in `AGENTS.md`.
+Best-effort detect `npm` / `cargo` / `pytest` / `go`. Only fills remaining `<!-- VERIFY_* -->` placeholders — does not overwrite commands you already edited.
+
+---
+
+## Memory (optional — not turned on by install or activate)
+
+**GLRP does not enable Grok experimental memory for you.**
+
+Handoff files (`SESSION-HANDOFF`, `FEATURE-LIST`, `progress.txt`) work with memory **off**. That is enough for multi-session work.
+
+If you want cross-session memory tools (`/flush`, `/remember`, auto recall):
+
+| Scope | How |
+|-------|-----|
+| One session | `grok --experimental-memory` |
+| Env | `export GROK_MEMORY=1` |
+| Persistent | Add to `~/.grok/config.toml`: `[memory]` / `enabled = true` |
+| Mid-session | `/memory on` |
+
+When memory is on, still update handoff before `/compact` or `/new`, and use `/flush` to save rich session notes.
+
+---
+
+## Safety & conflicts
+
+### Install only (one-liner)
+
+| Touches | Risk |
+|---------|------|
+| `~/.grok/skills/long-running-project/` | Low — skill package only; re-install **replaces** this skill folder |
+| `~/.grok/AGENTS.md` | Low — **appends** a short pointer if missing; does not rewrite the whole file |
+| Your git repos / code | **None** |
+| Global model, MCP, always-approve, sandbox | **None** |
+
+**Conflicts:** another skill already named `long-running-project` gets overwritten on re-install. Uninstall: `rm -rf ~/.grok/skills/long-running-project`.
+
+### Activate (per project)
+
+| Touches | Risk |
+|---------|------|
+| New `docs/*`, `.grok/*` | Low — **skips** files that already exist (unless `--force`) |
+| Existing `AGENTS.md` | **Protected** — append managed block or leave existing block alone (see above) |
+| New `.grok/config.toml` | Medium — adds **deny** rules for force-push / hard-reset / broad `rm -rf` (only if file is created) |
+| Agent behavior | Medium — more checklists, less casual subagent spam, test ratchet |
+
+**Not done by activate:** commits, pushes, memory enablement, overwriting your full AGENTS.md.
+
+### Recommended practice
+
+1. Install skill once on the machine.  
+2. `cd` into the **correct git project**.  
+3. Activate without `--force` on mature repos.  
+4. Review the managed `AGENTS.md` block and verify commands.  
+5. Commit scaffold files if you want them shared with the team.  
+6. Use `--refresh-agents-section` only when upgrading protocol text on purpose.
+
+### Undo project activate
+
+- Delete files you do not want under `docs/` / `.grok/`.  
+- Remove the managed block between the `LONG-RUNNING-PROJECT` markers from `AGENTS.md`.  
+- Or `git checkout --` those paths if you had not committed yet.
 
 ---
 
