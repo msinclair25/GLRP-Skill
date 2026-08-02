@@ -1,5 +1,9 @@
 # GLRP Skill
 
+<p align="center">
+  <img src="docs/assets/social-preview.png" alt="GLRP — Long-Running Project Skill. Activate. Scaffold. Ship." width="100%" />
+</p>
+
 **Grok Long-Running Project** — a [Grok Build](https://docs.x.ai/build/overview) skill that turns any repo into a durable, multi-session agentic coding workspace.
 
 Say this in a Grok session (from your project directory):
@@ -15,6 +19,10 @@ or:
 ```
 
 GLRP scaffolds the files and conventions that keep coding agents effective over **hours and days**: external handoff state, feature checklists, thin shared `AGENTS.md` rules, multi-agent profiles, safety denies, and a completeness ritual — without pasting a giant playbook into every prompt.
+
+<p align="center">
+  <img src="docs/assets/infographic.png" alt="GLRP protocol: activate skill, scaffold repo, work in milestones, verify with check-work" width="720" />
+</p>
 
 ---
 
