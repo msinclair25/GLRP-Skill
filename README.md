@@ -53,27 +53,33 @@ The full design notes live in [`docs/PLAYBOOK.md`](docs/PLAYBOOK.md).
 
 ## Install
 
-**Copy-paste one line** (terminal or Grok Build):
+**Copy-paste one line** (macOS, Linux, Windows Git Bash / WSL, or Grok Build):
 
 ```bash
-git clone --depth 1 https://github.com/msinclair25/GLRP-Skill.git /tmp/GLRP-Skill && bash /tmp/GLRP-Skill/install.sh && rm -rf /tmp/GLRP-Skill
+git clone --depth 1 https://github.com/msinclair25/GLRP-Skill.git "${TMPDIR:-/tmp}/GLRP-Skill" && bash "${TMPDIR:-/tmp}/GLRP-Skill/install.sh" && rm -rf "${TMPDIR:-/tmp}/GLRP-Skill"
 ```
 
-That clones the repo, installs the skill into `~/.grok/skills/long-running-project/`, adds a short pointer in `~/.grok/AGENTS.md` if needed, then removes the temp clone.
+That clones the repo, installs into `~/.grok/skills/long-running-project/`, adds a short pointer in `~/.grok/AGENTS.md` if needed, then removes the temp clone.
 
-**In Grok Build**, you can paste that same line as:
+### Platform support
 
-```text
-Run this install command, then confirm the skill is available:
+| Platform | Install one-liner | Notes |
+|----------|-------------------|--------|
+| **macOS** | Yes | Terminal or Grok Build shell |
+| **Linux** | Yes | bash + git + python3 for activate/scaffold |
+| **Windows (WSL)** | Yes | Same as Linux inside WSL |
+| **Windows (Git Bash)** | Yes | Install [Git for Windows](https://gitforwindows.org/); use Git Bash (or Grok’s bash-friendly shell) |
+| **Windows (PowerShell only)** | Not as-is | No bash/`/tmp` semantics — use Git Bash, WSL, or clone then `bash install.sh` |
 
-git clone --depth 1 https://github.com/msinclair25/GLRP-Skill.git /tmp/GLRP-Skill && bash /tmp/GLRP-Skill/install.sh && rm -rf /tmp/GLRP-Skill
-```
+**Needs:** `git`, `bash`, and for **activate** (scaffold): `python3` (on Windows: `python`/`py` often works if `python3` is on PATH; Grok may invoke `python3` — install Python 3 and ensure `python3` is available).
 
 Open a **new** Grok session (or restart) so skills reload. Optional check:
 
 ```bash
-grok inspect | grep -i long-running
+grok inspect
 ```
+
+Look for `long-running-project` in the skills list.
 
 ---
 
