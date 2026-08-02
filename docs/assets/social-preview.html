@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>GLRP social</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    width: 1280px;
+    height: 640px;
+    font-family: "SF Pro Display", "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: #070b14;
+    color: #f1f5f9;
+    overflow: hidden;
+    position: relative;
+  }
+  /* geometric bg — pure CSS, no gen-AI */
+  .bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 70% at 15% 40%, rgba(34, 211, 238, 0.22), transparent 55%),
+      radial-gradient(ellipse 60% 80% at 85% 30%, rgba(167, 139, 250, 0.2), transparent 50%),
+      radial-gradient(ellipse 50% 40% at 70% 90%, rgba(56, 189, 248, 0.12), transparent 45%),
+      linear-gradient(160deg, #0a0f1a 0%, #070b14 50%, #0c1220 100%);
+  }
+  .grid {
+    position: absolute; inset: 0;
+    opacity: 0.12;
+    background-image:
+      linear-gradient(rgba(148, 163, 184, 0.35) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148, 163, 184, 0.35) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 70% 80% at 50% 50%, black, transparent);
+  }
+  .orbit {
+    position: absolute;
+    right: 80px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 380px;
+    height: 380px;
+    border-radius: 50%;
+    border: 1px solid rgba(103, 232, 249, 0.25);
+    box-shadow: 0 0 60px rgba(34, 211, 238, 0.15), inset 0 0 40px rgba(167, 139, 250, 0.08);
+  }
+  .orbit::before {
+    content: "";
+    position: absolute;
+    inset: 40px;
+    border-radius: 50%;
+    border: 1px dashed rgba(167, 139, 250, 0.35);
+  }
+  .orbit::after {
+    content: "";
+    position: absolute;
+    inset: 90px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, rgba(103, 232, 249, 0.35), transparent 60%);
+    border: 2px solid rgba(103, 232, 249, 0.4);
+  }
+  .node {
+    position: absolute;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #67e8f9;
+    box-shadow: 0 0 16px #22d3ee;
+  }
+  .n1 { top: 30px; left: 50%; margin-left: -7px; }
+  .n2 { bottom: 50px; left: 40px; background: #a78bfa; box-shadow: 0 0 16px #a78bfa; }
+  .n3 { bottom: 80px; right: 50px; }
+
+  .content {
+    position: relative;
+    z-index: 2;
+    padding: 72px 80px;
+    max-width: 720px;
+  }
+  .badge {
+    display: inline-block;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #5eead4;
+    border: 1px solid rgba(94, 234, 212, 0.4);
+    padding: 8px 16px;
+    border-radius: 999px;
+    margin-bottom: 28px;
+  }
+  h1 {
+    font-size: 120px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 0.9;
+    background: linear-gradient(115deg, #ffffff 10%, #67e8f9 55%, #c4b5fd 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .sub {
+    margin-top: 20px;
+    font-size: 32px;
+    font-weight: 600;
+    color: #94a3b8;
+  }
+  .tag {
+    margin-top: 28px;
+    display: inline-block;
+    font-size: 22px;
+    font-weight: 600;
+    color: #0f172a;
+    background: linear-gradient(90deg, #67e8f9, #a5b4fc);
+    padding: 12px 22px;
+    border-radius: 12px;
+  }
+  .footer {
+    position: absolute;
+    bottom: 40px;
+    left: 80px;
+    right: 80px;
+    z-index: 2;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 18px;
+    color: #64748b;
+  }
+  .footer code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: #5eead4;
+    font-size: 18px;
+  }
+</style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="grid"></div>
+  <div class="orbit">
+    <span class="node n1"></span>
+    <span class="node n2"></span>
+    <span class="node n3"></span>
+  </div>
+  <div class="content">
+    <div class="badge">Grok Build skill</div>
+    <h1>GLRP</h1>
+    <p class="sub">Long-Running Project Protocol</p>
+    <p class="tag">Repo is memory · Activate · Scaffold · Ship</p>
+  </div>
+  <div class="footer">
+    <span>github.com/msinclair25/GLRP-Skill</span>
+    <code>activate long running project</code>
+  </div>
+</body>
+</html>

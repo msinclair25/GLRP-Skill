@@ -26,6 +26,9 @@ GLRP scaffolds the files and conventions that keep coding agents effective over 
 
 ---
 
+
+> **Share image for X:** use [`docs/assets/social-preview.png`](docs/assets/social-preview.png) (HTML/CSS export — not a generative AI image). The older Imagine render is kept as `social-preview-ai.png` if you want it.
+
 ## Why this exists
 
 Long agent sessions fail in predictable ways:
