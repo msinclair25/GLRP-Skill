@@ -83,20 +83,22 @@ Open `AGENTS.md` managed section. If verify lines still contain `<!-- VERIFY_* -
 
 Only edit handoff/feature list if those files are new or still templates — **do not wipe** user-filled SESSION-HANDOFF without asking.
 
-### 5. Memory — NOT activated by this skill
+### 5. Memory — recommend on, but do NOT auto-enable
 
-**GLRP does not enable experimental memory.** Users must opt in themselves:
+**GLRP does not flip experimental memory** (global / experimental — user choice).
 
-| Method | Command / config |
-|--------|------------------|
+- Handoff files work **without** memory; protocol is complete either way.
+- **Recommend** users enable it for long-running work (better recall + `/flush` / `/remember`).
+
+Tell them clearly:
+
+| Method | How |
+|--------|-----|
+| Persistent (recommended) | `[memory] enabled = true` in `~/.grok/config.toml` |
 | One session | `grok --experimental-memory` |
-| Env | `export GROK_MEMORY=1` |
-| Persistent | `[memory] enabled = true` in `~/.grok/config.toml` |
 | Mid-session | `/memory on` |
 
-Handoff files work **without** memory. Memory is optional sugar (`/flush`, `/remember`).
-
-Tell the user this clearly in the activation card.
+Do not silently edit their global `config.toml` unless they ask.
 
 ### 6. Report activation card
 
@@ -116,7 +118,9 @@ Tell the user this clearly in the activation card.
 - .grok/agents/* (unless --single-agent)
 
 ### Memory
-- **Not enabled by GLRP.** Optional: `grok --experimental-memory` or `/memory on`
+- **Not auto-enabled by GLRP** (by design).
+- **Recommended:** enable with `[memory] enabled = true` in `~/.grok/config.toml`, or `grok --experimental-memory` / `/memory on`
+- Handoff files still required even when memory is on
 
 ### How to work
 1. Fill FEATURE-LIST + SESSION-HANDOFF

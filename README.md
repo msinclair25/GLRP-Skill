@@ -171,22 +171,42 @@ Best-effort detect `npm` / `cargo` / `pytest` / `go`. Only fills remaining `<!--
 
 ---
 
-## Memory (optional — not turned on by install or activate)
+## Memory (recommended — you turn it on yourself)
 
-**GLRP does not enable Grok experimental memory for you.**
+**Long-running projects work without experimental memory.** GLRP’s handoff files (`SESSION-HANDOFF`, `FEATURE-LIST`, `progress.txt`) are the source of truth on disk, so multi-session work is fine with memory **off**.
 
-Handoff files (`SESSION-HANDOFF`, `FEATURE-LIST`, `progress.txt`) work with memory **off**. That is enough for multi-session work.
+**Most people will still want memory on.** It adds cross-session recall, `/flush` summaries, and `/remember` notes so Grok is less blank-slate between sessions. **Install and activate do not flip this for you** (memory is experimental and global — we leave the choice to you).
 
-If you want cross-session memory tools (`/flush`, `/remember`, auto recall):
+### Recommended: enable once, keep it on
+
+Add to `~/.grok/config.toml`:
+
+```toml
+[memory]
+enabled = true
+```
+
+Or for a single session:
+
+```bash
+grok --experimental-memory
+```
 
 | Scope | How |
 |-------|-----|
+| **Persistent (recommended)** | `[memory] enabled = true` in `~/.grok/config.toml` |
 | One session | `grok --experimental-memory` |
 | Env | `export GROK_MEMORY=1` |
-| Persistent | Add to `~/.grok/config.toml`: `[memory]` / `enabled = true` |
 | Mid-session | `/memory on` |
 
-When memory is on, still update handoff before `/compact` or `/new`, and use `/flush` to save rich session notes.
+### How GLRP + memory work together
+
+| Layer | Role |
+|-------|------|
+| **Handoff files** | Required protocol — milestone state, acceptance, next steps (always use these) |
+| **Experimental memory** | Recommended helper — search/recall + `/flush` / `/remember` |
+
+Even with memory **on**, update handoff before `/compact` or `/new`, and run `/flush` at milestone boundaries so useful session detail is saved.
 
 ---
 
@@ -217,11 +237,12 @@ When memory is on, still update handoff before `/compact` or `/new`, and use `/f
 ### Recommended practice
 
 1. Install skill once on the machine.  
-2. `cd` into the **correct git project**.  
-3. Activate without `--force` on mature repos.  
-4. Review the managed `AGENTS.md` block and verify commands.  
-5. Commit scaffold files if you want them shared with the team.  
-6. Use `--refresh-agents-section` only when upgrading protocol text on purpose.
+2. **Turn on memory** in `~/.grok/config.toml` (`[memory] enabled = true`) — recommended.  
+3. `cd` into the **correct git project**.  
+4. Activate without `--force` on mature repos.  
+5. Review the managed `AGENTS.md` block and verify commands.  
+6. Commit scaffold files if you want them shared with the team.  
+7. Use `--refresh-agents-section` only when upgrading protocol text on purpose.
 
 ### Undo project activate
 
@@ -237,7 +258,7 @@ When memory is on, still update handoff before `/compact` or `/new`, and use `/f
 2. Prompt with a checklist: *“Done means ALL of: …”*  
 3. Prefer project agents (`.grok/agents/*`) for research / implement / review.  
 4. After multi-part or code work: `/check-work`, then update handoff.  
-5. Before `/compact` or `/new`: update handoff + `/flush` (if memory is on).  
+5. Before `/compact` or `/new`: update handoff; `/flush` if memory is enabled (recommended).  
 6. Re-activate anytime to refresh the managed AGENTS section after skill upgrades.
 
 ---
