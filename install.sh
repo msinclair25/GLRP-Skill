@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Install GLRP (Grok Long-Running Project) skill into the user Grok skills directory.
+#
+# One-liner (recommended):
+#   git clone --depth 1 https://github.com/msinclair25/GLRP-Skill.git /tmp/GLRP-Skill && bash /tmp/GLRP-Skill/install.sh && rm -rf /tmp/GLRP-Skill
+#
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"

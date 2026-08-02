@@ -53,33 +53,23 @@ The full design notes live in [`docs/PLAYBOOK.md`](docs/PLAYBOOK.md).
 
 ## Install
 
-### One-liner (clone + install)
+**Copy-paste one line** (terminal or Grok Build):
 
 ```bash
-git clone https://github.com/msinclair25/GLRP-Skill.git
-cd GLRP-Skill
-chmod +x install.sh
-./install.sh
+git clone --depth 1 https://github.com/msinclair25/GLRP-Skill.git /tmp/GLRP-Skill && bash /tmp/GLRP-Skill/install.sh && rm -rf /tmp/GLRP-Skill
 ```
 
-This copies `long-running-project/` into:
+That clones the repo, installs the skill into `~/.grok/skills/long-running-project/`, adds a short pointer in `~/.grok/AGENTS.md` if needed, then removes the temp clone.
+
+**In Grok Build**, you can paste that same line as:
 
 ```text
-~/.grok/skills/long-running-project/
+Run this install command, then confirm the skill is available:
+
+git clone --depth 1 https://github.com/msinclair25/GLRP-Skill.git /tmp/GLRP-Skill && bash /tmp/GLRP-Skill/install.sh && rm -rf /tmp/GLRP-Skill
 ```
 
-and adds a short pointer to `~/.grok/AGENTS.md` if needed.
-
-### Manual
-
-```bash
-cp -R long-running-project ~/.grok/skills/long-running-project
-# optional playbook next to skill for handoff symlink
-mkdir -p ~/.grok/skills/long-running-project/docs
-cp docs/PLAYBOOK.md ~/.grok/skills/long-running-project/docs/
-```
-
-Restart Grok or open a **new** session so skills reload. Confirm:
+Open a **new** Grok session (or restart) so skills reload. Optional check:
 
 ```bash
 grok inspect | grep -i long-running
@@ -89,12 +79,7 @@ grok inspect | grep -i long-running
 
 ## Activate (per project)
 
-```bash
-cd /path/to/your/repo
-grok
-```
-
-Then:
+In any project session:
 
 ```text
 activate long running project
