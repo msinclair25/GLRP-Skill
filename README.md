@@ -305,9 +305,17 @@ Project files (`docs/*`, `.grok/*`, managed AGENTS block) remain until you delet
 
 ---
 
+## Tests
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+CI runs the same suite on Ubuntu and macOS (see `.github/workflows/test.yml`).
+
 ## Contributing
 
-PRs welcome: template tweaks, better language detection for verify commands, installers for other agents that honor `AGENTS.md`.
+PRs welcome: template tweaks, better language detection for verify commands, installers for other agents that honor `AGENTS.md`. Run the test suite before opening a PR.
 
 ---
 
