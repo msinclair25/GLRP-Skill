@@ -1,0 +1,2 @@
+# Append-only lab notes (one line per event preferred)
+# Format: YYYY-MM-DDTHH:MMZ | event | detail
