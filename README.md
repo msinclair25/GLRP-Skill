@@ -1,3 +1,9 @@
+> **Deprecated.** Use **[msinclair25/glrp](https://github.com/msinclair25/glrp)** instead.
+>
+> Long coding sessions with Grok keeps dying. The new skill writes the plan as a numbered list, does one step, runs a real test, writes down the next step. Next chat reads that file and keeps going.
+>
+> Do not run this playbook and the new skill on the same project.
+
 # GLRP Skill
 
 <p align="center">
