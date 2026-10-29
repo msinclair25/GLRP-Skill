@@ -357,7 +357,9 @@ Project files (`docs/*`, `.grok/*`, managed AGENTS block) remain until you delet
 python3 -m unittest discover -s tests -v
 ```
 
-CI runs the same suite on Ubuntu and macOS (see `.github/workflows/test.yml`).
+CI runs the same suite on Ubuntu 22.04 and macOS with Python 3.9 and 3.12
+(see `.github/workflows/test.yml`). The Linux runner is pinned because Python
+3.9 is not available through setup-python on Ubuntu 26.04.
 
 ## Contributing
 
