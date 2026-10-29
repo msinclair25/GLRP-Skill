@@ -1,14 +1,14 @@
 # Project-scoped Grok Build config (long-running defaults)
-# Docs: ~/.grok/docs/user-guide/
+# Docs: https://docs.x.ai/build/features/permissions
 
 [permission]
-deny = [
-  "Bash(rm -rf *)",
-  "Bash(git push --force*)",
-  "Bash(git push -f*)",
-  "Bash(git reset --hard*)",
+rules = [
+  { action = "deny", tool = "bash", pattern = "rm -rf *" },
+  { action = "deny", tool = "bash", pattern = "git push --force*" },
+  { action = "deny", tool = "bash", pattern = "git push -f*" },
+  { action = "deny", tool = "bash", pattern = "git reset --hard*" },
 ]
 
-# Uncomment after reviewing .grok/agents/ profiles:
-# [agent]
-# name = "conductor"
+# Agent selection is session/user scoped, not project-config scoped:
+#   grok --agent conductor
+#   GROK_AGENT=conductor grok

@@ -12,6 +12,7 @@ user-invocable: true
 1. Quote the user's original requirements as a checklist.
 2. For each item: DONE with evidence path/command, or MISSING.
 3. If any MISSING: continue working — do not end the turn.
-4. If all DONE: run `/check-work` when code changed; update `docs/SESSION-HANDOFF.md`.
-5. Update `docs/FEATURE-LIST.md` / append `docs/progress.txt` when applicable.
-6. Only then write the final summary.
+4. If all DONE and code changed: run the project's build/test/lint commands. For risky work, also run `/review` or use an independent reviewer.
+5. Update `docs/SESSION-HANDOFF.md`.
+6. Update `docs/FEATURE-LIST.md` / append `docs/progress.txt` when applicable.
+7. Only then write the final summary.

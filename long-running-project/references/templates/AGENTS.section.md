@@ -5,7 +5,7 @@
 - Multi-part user requests are incomplete until EVERY part is done at full depth.
 - Before ending a turn, re-read the latest user message and list unmet requirements.
 - If completeness conflicts with brevity, completeness wins.
-- After any multi-part or code task, run `/check-work` (or state why it cannot run).
+- After any multi-part or code task, run the project verify commands, then invoke `/project-complete`.
 
 ### Session hygiene
 - Prefer milestone-sized work, not infinite threads.

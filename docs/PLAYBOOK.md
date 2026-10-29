@@ -5,10 +5,10 @@ aliases:
   - Long Running Grok Build Instructions
 type: playbook
 status: active
-cli_version_verified: "0.2.118"
-model_default: grok-4.5
+cli_version_verified: "1.0.41"
+model_default: grok-4.7
 created: 2026-08-01
-updated: 2026-08-02
+updated: 2026-10-15
 owner: ms
 tags:
   - grok-build
@@ -25,9 +25,11 @@ tags:
 > 2. **Copy Part III templates** into every project (thin shared `AGENTS.md`, `.grok/agents/`, skills, memory, hooks).  
 > 3. **Follow Part IV session protocol** on every long-running effort.  
 > 4. **Use Part V anti-laziness rules** so multi-part asks finish in one pass.  
-> Verified against Grok CLI **0.2.118** docs under `~/.grok/docs/user-guide/` and `grok inspect`.
+> Verified against Grok Build CLI **1.0.41**, its installed help/user guide, `grok inspect`, the live Grok Build model catalog, and current xAI Build documentation. Re-check `/docs`, `grok models`, and `/context` after upgrades because Build capabilities can change independently of the public API.
 >
-> **2026-08-02:** Multi-agent layering (§7.1, §19a). Completeness pass (§5, §18–§18b, §33). **Industry research pass** — Ralph loop, test ratchet, TDD, judge separation, earned AGENTS.md, budgets (§34).
+> **2026-10-13:** Grok 4.7 migration — current agent/memory/headless commands, folder-trust lifecycle, portable scaffold, and `/project-complete` verification flow.
+>
+> **2026-10-15:** Review hardening — preflight-safe AGENTS merging, symlink-safe state resets, conservative package-aware verify detection, staged rollback-safe skill install, and explicit existing-config guidance.
 
 ---
 
@@ -35,7 +37,7 @@ tags:
 
 ## 1. Product shape
 
-**Grok Build** (CLI / TUI from SpaceXAI) is an interactive coding agent that:
+**Grok Build** (CLI / TUI from xAI) is an interactive coding agent that:
 
 - Reads and edits your repo
 - Runs shell commands
@@ -69,7 +71,7 @@ You type prompt
     → session saved under ~/.grok/sessions/<encoded-cwd>/<session-id>/
 ```
 
-**Critical gap for long projects:** the model **self-declares done**. There is no automatic multi-part completeness gate. `laziness_detector` exists in the model catalog for `grok-4.5` but is currently **`enabled: false`**. `check-work` is **opt-in** (`/check-work`). You must force completeness via **prompt checklists**, **AGENTS.md**, and optionally a **Stop hook**.
+**Critical gap for long projects:** the model still decides when its turn is done; there is no universal multi-part acceptance gate. Current Grok Build no longer bundles the earlier dedicated completeness command. Use explicit acceptance checklists, the project `/project-complete` skill, real build/test/lint commands, and—when risk warrants it—`/review`, an independent reviewer, or `/goal`'s verification loop.
 
 ---
 
@@ -77,20 +79,16 @@ You type prompt
 
 | Concept | Default / notes |
 |---------|-----------------|
-| Context window (grok-4.5) | ~500k tokens |
-| Auto-compact | ~80–85% of window (`[session] auto_compact_threshold_percent`) |
+| Grok 4.7 public API context | 500k tokens |
+| Grok Build session context | Read the live `grok models` / `/context` value; the cached Build 4.7 entry used for this review reported 256k, so do not assume the API limit |
+| Auto-compact | Catalog/config dependent (`[session] auto_compact_threshold_percent`); the 1.0.41 guide says 85% while some model metadata advertises 80% |
 | Manual compact | `/compact` or `/compact keep X Y Z` |
-| Memory survive compact | Only if you `/flush` or `/remember` **before** compact |
+| Memory around compact | Current memory can auto-flush before compaction; use `/flush` for an explicit checkpoint and keep the handoff file authoritative |
 | Plan mode + compact | Plan state is preserved across compact |
 
 **Long-run rule:** treat context as **working memory**, not archive. Milestone → flush → compact or `/new` with handoff note.
 
-Optional quality upgrade for long sessions:
-
-```toml
-[features]
-two_pass_compaction = true   # opt-in; better compact quality, more cost at compact time
-```
+Current Grok Build enables two-pass compaction by default. Treat that as an implementation default, not a reason to skip the handoff: the durable record still belongs in project files and memory before compaction.
 
 Check usage anytime: `/context`, `/session-info` (aliases `/status`, `/info`). Credits: `/usage`.
 
@@ -110,7 +108,7 @@ These are the primary tools the model calls (names may appear slightly different
 | `search_replace` | Create/edit files with exact-string replace |
 | `list_dir` | Directory listing (respects gitignore by default in listings) |
 | `grep` | ripgrep across workspace |
-| `run_terminal_command` | Shell; can `background: true`; long timeout options |
+| `run_terminal_command` | Shell with background execution and long-timeout support |
 
 ### Task & planning
 
@@ -162,21 +160,23 @@ Enabled by default (`[subagents] enabled = true`).
 | `explore` | No | Codebase research, maps |
 | `plan` | No | Implementation plans only |
 
-**Spawn parameters that matter for long projects:**
+**Current spawn parameters that matter for long projects:**
 
+- `prompt` + `description` — bounded assignment and short task label
 - `isolation: "worktree"` — isolated git worktree (safe parallel writers)
-- `capability_mode`: `read-only` | `read-write` | `execute` | `all`
-- `background: true` — non-blocking; poll later
-- `resume_from` — continue a finished child’s transcript
+- `run_in_background: true` — non-blocking; poll later
+- `resume_from` — continue a finished child's transcript
 - `cwd` — different working directory (not with worktree)
+
+Do not pass retired capability, background, or named-type fields to the spawn tool. Put read/write constraints and the required evidence in the assignment, use a read-oriented project agent where available, and inspect the tool schema exposed by the installed release.
 
 **Personas** (`/personas`, `.grok/personas/*.toml`): behavioral overlays for subagents (tone, I/O contracts), not full agent replacements.
 
 **Roles** (`.grok/roles/*.toml` or `[subagents.roles.*]`): reusable capability/model defaults for spawn types (e.g. default `read-only`, model pin, prompt file).
 
-**Custom agent profiles** (`.grok/agents/*.md`, `~/.grok/agents/`, `/config-agents`): full session/subagent definitions — name, tools, `permission_mode`, body prompt, optional `agents_md: true` to still load project `AGENTS.md`. Priority: CLI `--agent-profile` → config `[agent]` → `GROK_AGENT` → default.
+**Custom agent profiles** (`.grok/agents/*.md`, `~/.grok/agents/`, `/config-agents`): full agent definitions—name, tools, `permission_mode`, body prompt, optional `agents_md: true` to load project `AGENTS.md`. Select the primary agent with `grok --agent conductor`, `GROK_AGENT=conductor`, or a **user-level** `[agent]` setting. Project `.grok/config.toml` does not accept `[agent]`.
 
-**Dashboard:** `/dashboard` or `Ctrl+\` — multi top-level session roster (not subagents). Subagents appear under parent progress.
+**Dashboard:** `/dashboard` or `Ctrl+\` opens the session roster. Current CLI/help and docs differ on whether child sessions get their own rows, so treat `Ctrl+G`'s tasks pane as the authoritative subagent view.
 
 **Depth limit (critical):** Only the **top-level** session may spawn subagents. A subagent **cannot** spawn children (max nesting depth = 1). Design trees as **conductor → N workers**, never worker → sub-worker. If a child needs more help, it must return findings to the parent.
 
@@ -249,7 +249,7 @@ Inspect: `grok inspect`.
 | **Project rules** | `AGENTS.md` (root + optional package subdirs) | Every session/agent that loads project instructions | Stack, verify commands, completeness, security, handoff, default-deny delegation |
 | **Agent profiles** | `.grok/agents/*.md` | That agent / when spawned as that type | Role identity, tools, model, permission posture, output contract |
 | **Personas / roles** | `.grok/personas/`, `.grok/roles/`, config | Subagents | Tone, I/O contracts, capability defaults |
-| **Skills** | `.grok/skills/` | On demand | Repeatable procedures (`/check-work`, review, deploy) |
+| **Skills** | `.grok/skills/` | On demand | Repeatable procedures (`/project-complete`, review, deploy) |
 
 **Why not one fat AGENTS.md for all roles**
 
@@ -304,7 +304,7 @@ Do not spawn further subagents. Edit only assigned paths.
 Return a compact evidence packet: what changed, commands run, risks, next action.
 ```
 
-Switch / inspect: `/config-agents` (alias `/agents`), `GROK_AGENT=name`, `grok --agent-profile path`, or spawn with matching `subagent_type` / role name.
+Switch / inspect: `/config-agents` (alias `/agents`), `GROK_AGENT=conductor grok`, or `grok --agent conductor`. When delegating, describe the bounded outcome and constraints using the spawn schema exposed by the current release; do not assume a named-agent field is available.
 
 **Long-run rule:** thin shared `AGENTS.md` + one definition file per role. Same idea as Sol/Luna role manifests: **shared policy in one place, role manifests separate**.
 
@@ -324,7 +324,8 @@ Reusable procedure packages (`SKILL.md`). Locations: project / user / bundled / 
 
 | Skill | When |
 |-------|------|
-| `check-work` | After multi-part or code work — **use explicitly** |
+| Project `project-complete` | Checklist/evidence ritual shipped by GLRP; invoke after multi-part work |
+| `goal` | Autonomous multi-round work with an independent verification panel |
 | `design` | Design docs + review loop |
 | `execute-plan` | PR plan DAG implementation |
 | `review` | Code review of changes / PR |
@@ -347,7 +348,7 @@ Create: `/create-skill`. List: `grok inspect`, `/skills`.
 enabled = true
 ```
 
-or `GROK_MEMORY=1` / `grok --experimental-memory` / `/memory on`.
+or launch one session with `GROK_MEMORY=1 grok`. Mid-session, open `/memory` and press `t` to toggle.
 
 | Command | Effect |
 |---------|--------|
@@ -398,16 +399,19 @@ Workflow agent budget: default 128 logical child agents (1–1024).
 |------|----------|
 | ask (default) | Prompt on risky tools |
 | auto | Classifier reduces prompts |
-| always-approve / yolo | Skip prompts; **deny rules still apply** |
+| always-approve | Skip prompts; **deny rules still apply** |
 | acceptEdits | Edits free; other tools may still ask |
 
-Toggle: `Ctrl+O`, `/always-approve`, `Shift+Tab`, `--yolo`.
+Toggle: `Ctrl+O`, `/always-approve`, `Shift+Tab`, `--always-approve`.
 
 ### Deny/allow rules
 
 ```toml
 [permission]
-deny = ["Bash(rm -rf *)", "Bash(git push --force*)"]
+rules = [
+  { action = "deny", tool = "bash", pattern = "rm -rf *" },
+  { action = "deny", tool = "bash", pattern = "git push --force*" },
+]
 ```
 
 ### Sandbox (OS-level, off by default)
@@ -442,8 +446,8 @@ Project hooks require **folder trust** (`/hooks-trust` or `--trust`).
 | Control | How |
 |---------|-----|
 | Default model | `[models] default` or `/model` |
-| Effort | `/effort high` \| `medium` \| `low` (model-dependent) |
-| Per-session | `grok -m grok-4.5 --effort high` |
+| Effort | `/effort xhigh` \| `high` \| `medium` \| `low` (model-dependent) |
+| Per-session | `grok -m grok-4.7 --effort high` |
 
 For long projects: prefer **high effort** on architecture/integration sessions; medium for mechanical multi-file edits after a solid plan.
 
@@ -452,10 +456,10 @@ For long projects: prefer **high effort** on architecture/integration sessions; 
 ## 15. Headless / CI highlights
 
 ```bash
-grok -p "…" --yolo --output-format json
+grok -p "…" --always-approve --output-format json
 grok -p "…" -r <session-id>           # continue same session
 grok -p "…" --max-turns 40            # cap loops
-grok -p "…" --disallowed-tools "Agent"  # no subagents
+grok -p "…" --no-subagents             # disable child agents
 ```
 
 Capture `sessionId` from JSON for multi-step pipelines.
@@ -467,7 +471,7 @@ Capture `sessionId` from JSON for multi-step pipelines.
 | Key / command | Action |
 |---------------|--------|
 | `Ctrl+O` | Always-approve toggle |
-| `Shift+Tab` | Normal → Plan → Always-approve |
+| `Shift+Tab` | Cycle Normal / Plan / Auto (when available) / Always-approve |
 | `Ctrl+B` | Background running command |
 | `Ctrl+G` | Tasks pane (bg work / subagents) |
 | `Ctrl+\` | Agent dashboard |
@@ -517,7 +521,7 @@ Single-agent projects can omit `.grok/agents/` and use only `AGENTS.md`. Multi-a
 
 ```toml
 [models]
-default = "grok-4.5"
+default = "grok-4.7"
 
 [session]
 auto_compact_threshold_percent = 70   # compact earlier on long projects
@@ -535,14 +539,14 @@ show_thinking_blocks = true
 [features]
 codebase_indexing = true
 telemetry = false
-# two_pass_compaction = true          # better compact; costs more at compact time
+# two_pass_compaction is enabled by default in current Grok Build
 
 [subagents]
 enabled = true
 
 # Optional: pin lighter models for research children
 # [subagents.models]
-# explore = "grok-4.5"                # or a cheaper/faster model if available
+# explore = "grok-4.7-build-fast"     # verify availability with `grok models`
 ```
 
 Tune permission mode per trust level. For solo trusted laptops, many people use always-approve **plus** deny rules (prefer **project** deny — §18a).
@@ -554,19 +558,17 @@ Project config can carry MCP, plugins, and **permission rules** (not every globa
 ```toml
 # .grok/config.toml
 [permission]
-deny = [
-  "Bash(rm -rf *)",
-  "Bash(git push --force*)",
-  "Bash(git push -f*)",
-  "Bash(git reset --hard*)",
+rules = [
+  { action = "deny", tool = "bash", pattern = "rm -rf *" },
+  { action = "deny", tool = "bash", pattern = "git push --force*" },
+  { action = "deny", tool = "bash", pattern = "git push -f*" },
+  { action = "deny", tool = "bash", pattern = "git reset --hard*" },
 ]
-
-# Optional: default primary agent when using named profiles
-# [agent]
-# name = "conductor"
 ```
 
-Folder trust is required before **project** hooks/MCP/LSP run (`/hooks-trust` or `grok --trust`). Global `~/.grok` hooks are always trusted.
+Project config is intentionally limited to MCP, plugins, and permission rules. Select `conductor` with `grok --agent conductor`, `GROK_AGENT=conductor grok`, or user-level config—not in this project file.
+
+Folder trust is required before project `AGENTS.md`, skills, config rules, hooks, MCP, and LSP are loaded. Approve the interactive trust prompt or intentionally launch from that folder with `grok --trust`, then start a new session after changing startup-loaded rules. Global `~/.grok` hooks are always trusted.
 
 ## 18b. Worktrees (parallel isolation)
 
@@ -592,7 +594,7 @@ Keep this **shared and thin**. Role-specific identity belongs in `.grok/agents/`
 - Multi-part user requests are incomplete until EVERY part is done at full depth.
 - Before ending a turn, re-read the latest user message and list unmet requirements.
 - If completeness conflicts with brevity, completeness wins.
-- After any multi-part or code task, run /check-work (or state why it cannot run).
+- After any multi-part or code task, run project verification, then invoke /project-complete.
 
 ## Session hygiene
 - Prefer milestone-sized work, not infinite threads.
@@ -705,7 +707,7 @@ Prioritize correctness, security, and test gaps over style.
 Return findings by severity with paths/symbols and recommended next action.
 ```
 
-Wire spawn/default via `/config-agents`, project `[agent] name = "conductor"`, or parent instructions that name these types. For Sol/Luna-style kits, map each Luna role to its own `.md` (or keep Codex TOMLs for Codex and Grok agents for Grok — do not merge two harness formats in one file).
+Select the primary profile via `/config-agents`, `grok --agent conductor`, `GROK_AGENT=conductor grok`, or user-level config. Keep project `.grok/config.toml` for its supported MCP/plugin/permission subset. For Sol/Luna-style kits, map each Luna role to its own `.md` (or keep Codex TOMLs for Codex and Grok agents for Grok—do not merge two harness formats in one file).
 
 ## 20. Completeness skill (project)
 
@@ -725,8 +727,9 @@ description: >
 1. Quote the user's original requirements as a checklist.
 2. For each item: DONE with evidence path/command, or MISSING.
 3. If any MISSING: continue working — do not end the turn.
-4. If all DONE: run /check-work when code changed; update docs/SESSION-HANDOFF.md.
-5. Only then write the final summary.
+4. If all DONE and code changed: run build/test/lint; use /review or an independent reviewer for risky work.
+5. Update docs/SESSION-HANDOFF.md and FEATURE-LIST/progress when applicable.
+6. Only then write the final summary.
 ```
 
 ## 21. Optional Stop hook (advanced)
@@ -753,7 +756,7 @@ Force the model not to stop without a marker file (adjust to taste):
 > [!warning] Stop-hook pitfall
 > Gating on `STATUS: complete` will **block every intermediate turn** of a multi-turn milestone and can thrash the agent. Prefer:
 >
-> - AGENTS.md completeness rules + explicit `/check-work` (default), or  
+> - AGENTS.md completeness rules + explicit project verification and `/project-complete`, or
 > - A Stop hook that only enforces **verify commands** (tests green) on code-changing sessions, or  
 > - A Stop hook that runs only when a sentinel file exists (e.g. `.grok/request-final-check`).
 >
@@ -765,7 +768,7 @@ With memory enabled:
 
 ```
 /remember This repo uses <stack>. Verify with: <commands>.
-/remember Long-running protocol: milestone sessions, flush before compact, check-work after multi-part.
+/remember Long-running protocol: milestone sessions, flush before compact, verify + project-complete after multi-part.
 ```
 
 ---
@@ -779,7 +782,7 @@ With memory enabled:
 2. PLAN       /plan if architecture is ambiguous; else short approach note
 3. APPROVE    You accept plan (or skip if trivial)
 4. IMPLEMENT  Main agent + optional explore/worker subagents
-5. VERIFY     Tests + /check-work
+5. VERIFY     Build/test/lint + /project-complete (+ independent review when warranted)
 6. RECORD     Update ROADMAP, DECISIONS, SESSION-HANDOFF; /flush; /remember if durable
 7. CUT        /new or /compact with handoff — never carry infinite history
 ```
@@ -799,7 +802,7 @@ Constraints:
 
 After work:
 - Run <verify>
-- /check-work
+- /project-complete
 - Update docs/SESSION-HANDOFF.md
 
 Do not stop with only a subset complete. If blocked, say BLOCKED with reason.
@@ -882,7 +885,7 @@ Branch / commit:
 1. `grok -c` or resume named session for active milestone  
 2. Attach `@docs/SESSION-HANDOFF.md` (do not rely on memory alone)  
 3. One milestone slice with checklist prompt  
-4. `/check-work` → commit → `/flush`  
+4. Verify → `/project-complete` → commit → `/flush`
 5. Glance `/usage` and `/context` if the day was heavy  
 
 **Weekly**
@@ -901,14 +904,13 @@ Branch / commit:
 
 | Gap | Mitigation |
 |-----|------------|
-| No auto multi-part completeness gate | Checklist in every prompt + AGENTS.md |
-| `laziness_detector` disabled for grok-4.5 | Manual `/check-work`; careful Stop hooks only |
-| `check-work` opt-in only | AGENTS.md: always after multi-part/code |
+| No universal multi-part acceptance gate | Verify commands + `/project-complete`; careful Stop hooks only |
+| Generator can overrate its own work | Use `/review`, `/goal` verification, or an independent read-only reviewer for risky changes |
 | Plan mode doesn’t gate subagent writes | Use explore/plan / read-only project agents while planning |
-| Compaction drops unflushed detail | `/flush` + SESSION-HANDOFF before compact |
+| Compaction can omit important detail | Explicit `/flush` + SESSION-HANDOFF before intentional cuts; do not rely only on auto-flush |
 | Over-delegation wastes context/credits | Default-deny spawn; watch `/usage` |
 | Subagents cannot nest | Fan-out only from root conductor |
-| Memory is experimental / can go stale | Prefer handoff file + `/flush`; treat memory as hints |
+| Experimental memory can go stale | Prefer handoff file + `/flush`; treat memory as hints |
 | Stop hook on STATUS:complete thrash | See §21 warning — do not use naively |
 
 ## 31. Completion ritual (agent + you)
@@ -917,13 +919,13 @@ Branch / commit:
 
 1. Checklist vs original ask  
 2. Evidence for each item  
-3. `/check-work` when code/docs changed  
+3. Project build/test/lint + `/project-complete` when code/docs changed
 4. Update SESSION-HANDOFF  
 
 **You (human QA):**
 
 1. Skim final message for “I did X” without X existing  
-2. Run `/check-work` yourself if agent skipped  
+2. Run the verify commands yourself if the agent skipped them; invoke `/project-complete` for the evidence checklist
 3. If agent under-delivered: reply with **only** the missing checklist items — don’t restart the whole project narrative  
 
 ## 32. Phrases that force full delivery
@@ -931,7 +933,7 @@ Branch / commit:
 Use when Grok is drifting:
 
 ```text
-Re-read my original message. List every requirement. Mark DONE/MISSING with evidence. Finish all MISSING before stopping. Do not summarize as complete until the list is all DONE. Then /check-work.
+Re-read my original message. List every requirement. Mark DONE/MISSING with evidence. Finish all MISSING before stopping. Do not summarize as complete until the list is all DONE. Then run project verification and /project-complete.
 ```
 
 ```text
@@ -949,7 +951,7 @@ You stopped early. Continue from the incomplete items only. No new scope.
 | Relying on memory without SESSION-HANDOFF | Stale/incomplete recall |
 | Always-approve with no deny rules | Destructive bash risk |
 | Stop hook requiring STATUS:complete every turn | Turn thrash mid-milestone |
-| Skipping `/check-work` on multi-part asks | False “done” (product will not auto-verify) |
+| Skipping verification and `/project-complete` on multi-part asks | False “done” (the product does not universally auto-accept work) |
 | Mixing Codex role TOMLs and Grok agent `.md` as one format | Wrong harness loads the wrong files |
 | Deleting failing tests to “go green” | Breaks behavioral floor; classic agent failure |
 | Fixing a wrong architecture with more chat | Revert → refine plan → re-run is usually faster |
@@ -1007,7 +1009,7 @@ Before any long run: external file of **testable** checkboxes the agent cannot q
 
 #### D. Generator ≠ evaluator (planner / worker / judge)
 
-Cursor/Anthropic: planners emit tasks, workers implement, **judges** decide if iteration is finished. Our reviewer is generation-adjacent; for long runs, treat **acceptance** as a separate pass (human, `/check-work`, or a dedicated reviewer session that cannot edit product code). Self-grading is systematically over-optimistic.
+Cursor/Anthropic: planners emit tasks, workers implement, **judges** decide if iteration is finished. Our reviewer is generation-adjacent; for long runs, treat **acceptance** as a separate pass (human, `/review`, `/goal` verification, or a dedicated reviewer session that cannot edit product code). Self-grading is systematically over-optimistic.
 
 #### E. Revert + replan beats chat-repair
 
@@ -1094,9 +1096,13 @@ grok --cwd ~/proj --effort high
 grok --worktree=feat-auth --ref main "implement auth slice"
 
 # Trusted automation (still use deny rules)
-grok --yolo
-grok -p "…" --yolo --output-format json --max-turns 50
+grok --always-approve
+grok -p "…" --always-approve --output-format json --max-turns 50
 grok -p "…" -r <session-id> --output-format json   # multi-step pipeline
+grok -p "…" --no-subagents                         # root-only automation
+
+# Named project agent (project must be trusted)
+grok --agent conductor
 
 # Sandbox
 grok --sandbox workspace
@@ -1120,7 +1126,8 @@ grok update
 /compact keep architecture decisions and open bugs
 /flush
 /remember …
-/check-work
+/project-complete
+/review
 /goal …
 /loop 30m …
 /dashboard
@@ -1144,7 +1151,7 @@ Print and tick when opening a **new** long-running project:
 - [ ] `.grok/skills/project-complete/` (optional but recommended)  
 - [ ] Memory enabled globally or for this workstream  
 - [ ] `grok inspect` shows expected skills, **agents**, and rules  
-- [ ] Folder trusted if using project hooks/MCP  
+- [ ] Folder trusted, then a fresh session started so project AGENTS/config load; project skills/hooks/MCP are visible
 - [ ] First session: architecture or roadmap only; `/flush` at end  
 - [ ] Naming convention for sessions: `/rename m1-auth-scaffold`  
 - [ ] Know conductor→worker topology (no nested spawns)  
@@ -1241,7 +1248,7 @@ See **§7.1** and **§19a**.
 | Optimize for **long-running** projects | Yes | Parts III–V (milestones, compact, memory, parallel, handoff) |
 | Not lazy / double-check completeness | Yes | Part V + this checklist |
 
-**Sources consulted:** `~/.grok/docs/user-guide/` 01–24 (core sections for sessions, skills, config, subagents, plan, memory, hooks, sandbox, permissions, dashboard, background tasks, slash commands, headless), `grok inspect` on 0.2.118, local `models_cache.json` laziness_detector flag, `check-work` skill definition.
+**Sources consulted:** current xAI documentation for [Grok 4.7](https://docs.x.ai/developers/grok-4-7), [Build settings](https://docs.x.ai/build/settings), [skills/plugins](https://docs.x.ai/build/features/skills-plugins-marketplaces), [subagents](https://docs.x.ai/build/features/subagents), [permissions](https://docs.x.ai/build/features/permissions), [modes and commands](https://docs.x.ai/build/modes-and-commands), [headless scripting](https://docs.x.ai/build/cli/headless-scripting), [project rules](https://docs.x.ai/build/features/project-rules), and [hooks](https://docs.x.ai/build/features/hooks); plus the installed 1.0.41 user guide, `grok inspect`, `grok --help`, and the live Build model catalog.
 
 **Not a substitute for:** reading `/docs` after major CLI upgrades — re-verify after `grok update`.
 
@@ -1258,6 +1265,8 @@ See **§7.1** and **§19a**.
 
 | Date | Change |
 |------|--------|
+| 2026-10-15 | Review hardening: staged rollback-safe install, fail-before-write AGENTS validation, symlink-safe resets, package-manager-aware verify commands, and explicit warning when an existing project config receives no GLRP deny rules |
+| 2026-10-13 | Grok 4.7 / Build 1.0.41 migration: current CLI and subagent fields, canonical memory/agent/headless commands, trust/reload lifecycle, Build-vs-API context distinction, project-complete verification, portable and non-clobbering scaffold |
 | 2026-08-01 | Initial playbook: feature map + long-running protocol |
 | 2026-08-02 | Multi-agent findings: thin `AGENTS.md` vs `.grok/agents/`; §7.1 decision table; scaffold + §19a templates; checklist updated |
 | 2026-08-02 | Completeness pass: subagent depth=1, name shadowing, two_pass_compaction, project deny config, worktrees §18b, Stop-hook warning, attach handoff, cost note, anti-patterns §33 |
