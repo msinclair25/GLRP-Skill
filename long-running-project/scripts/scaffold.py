@@ -394,6 +394,20 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    if args.refresh_agents_section and not args.force and not args.force_state:
+        if args.no_agents_merge:
+            parser.error("--refresh-agents-section cannot be combined with --no-agents-merge")
+        root, how = resolve_project_root(args.cwd)
+        assert_safe_root(root, args.allow_unsafe_cwd, args.allow_non_git, how)
+        created: list[str] = []
+        updated: list[str] = []
+        skipped: list[str] = []
+        merge_agents_section(root / "AGENTS.md", refresh=True,
+                             created=created, updated=updated, skipped=skipped)
+        fill_verify_placeholders(root / "AGENTS.md", detect_verify_commands(root))
+        print("Refreshed only the managed AGENTS.md section. No other files were created or changed.")
+        return 0
+
     if not TEMPLATES.is_dir():
         print(f"ERROR: templates missing at {TEMPLATES}", file=sys.stderr)
         return 1

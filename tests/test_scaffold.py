@@ -55,6 +55,26 @@ def run_install(grok_home: Path) -> subprocess.CompletedProcess[str]:
     )
 
 
+class RefreshOnlyTests(unittest.TestCase):
+    def test_refresh_creates_only_agents_and_keeps_other_state(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            git_init(root)
+            first = run_scaffold(["--cwd", str(root), "--refresh-agents-section"])
+            self.assertEqual(first.returncode, 0, first.stderr)
+            self.assertTrue((root / "AGENTS.md").is_file())
+            self.assertFalse((root / "docs").exists())
+            self.assertFalse((root / ".grok").exists())
+            (root / "docs").mkdir()
+            state = root / "docs" / "progress.txt"
+            state.write_text("user history\n")
+            second = run_scaffold(["--cwd", str(root), "--refresh-agents-section"])
+            self.assertEqual(second.returncode, 0, second.stderr)
+            self.assertEqual(state.read_text(), "user history\n")
+            self.assertEqual([p.name for p in (root / "docs").iterdir()], ["progress.txt"])
+            self.assertFalse((root / ".grok").exists())
+
+
 class InstallerTests(unittest.TestCase):
     def test_installs_grok_47_skill_idempotently_and_preserves_global_agents(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

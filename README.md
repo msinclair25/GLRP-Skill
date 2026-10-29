@@ -135,6 +135,10 @@ activate long running project
 | `no agents merge` / `--no-agents-merge` | Do not touch `AGENTS.md` |
 | a milestone goal in the same message | Seeds handoff + feature list |
 
+`--refresh-agents-section` on its own creates or refreshes only `AGENTS.md`;
+it does not recreate missing docs, agent profiles, or project config. Combining
+it with `--force` or `--force-state` explicitly requests the full scaffold operation.
+
 **Without Grok** (script only):
 
 ```bash
